@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">PJM Assistant</string>
+    <string name="action_settings">Settings</string>
+
+    <!-- Main screen text-->
+    <string name="homeLabel">Home</string>
+    <string name="readButton">Read</string>
+    <string name="speakButton">Speak</string>
+
+    <!-- Read screen text-->
+    <string name="readLabel">Read</string>
+
+    <!-- Speak screen text-->
+    <string name="speakLabel">Speak</string>
+    <string name="title_activity_main2">MainActivity2</string>
+
+    <!-- Settings screen text-->
+    <string name="settingsLabel">Settings</string>
+    <string name="cameraSectionLabel">Camera</string>
+    <string name="cameraTypeLabel">Using:</string>
+</resources>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/HomeFragment">
+
+    <fragment
+        android:id="@+id/HomeFragment"
+        android:name="com.pwr.pjmassistant.ui.HomeFragment"
+        android:label="@string/homeLabel"
+        tools:layout="@layout/fragment_home">
+
+        <action
+            android:id="@+id/action_HomeFragment_to_ReadFragment"
+            app:destination="@id/ReadFragment" />
+        <action
+            android:id="@+id/action_HomeFragment_to_SpeakFragment"
+            app:destination="@id/SpeakFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/ReadFragment"
+        android:name="com.pwr.pjmassistant.ui.ReadFragment"
+        android:label="@string/readLabel"
+        tools:layout="@layout/fragment_read">
+
+        <action
+            android:id="@+id/action_ReadFragment_to_HomeFragment"
+            app:destination="@id/HomeFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/SpeakFragment"
+        android:name="com.pwr.pjmassistant.ui.SpeakFragment"
+        android:label="@string/speakLabel"
+        tools:layout="@layout/fragment_speak">
+        <action
+            android:id="@+id/action_SpeakFragment_to_HomeFragment"
+            app:destination="@id/HomeFragment" />
+    </fragment>
+</navigation>

@@ -1,13 +1,16 @@
-package com.pwr.pjmassistant;
+package com.pwr.pjmassistant.settings;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
 
-public class SettingsActivity extends AppCompatActivity {
+import com.pwr.pjmassistant.R;
 
+public class SettingsActivity extends AppCompatActivity
+{
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState)
+    {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
     }
