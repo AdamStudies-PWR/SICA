@@ -9,13 +9,17 @@
 
     <!-- Read screen text-->
     <string name="readLabel">Read</string>
+    <string name="clearButton">Clear</string>
+    <string name="pauseButton">Pause</string>
+    <string name="copyButton">Copy</string>
+    <string name="clipboardLabel">translation</string>
 
     <!-- Speak screen text-->
     <string name="speakLabel">Speak</string>
-    <string name="title_activity_main2">MainActivity2</string>
 
     <!-- Settings screen text-->
     <string name="settingsLabel">Settings</string>
     <string name="cameraSectionLabel">Camera</string>
     <string name="cameraTypeLabel">Using:</string>
+
 </resources>

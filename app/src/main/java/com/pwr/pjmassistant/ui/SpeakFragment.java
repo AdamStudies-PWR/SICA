@@ -11,6 +11,7 @@ import androidx.fragment.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.ImageView;
 
 import com.pwr.pjmassistant.R;
@@ -39,6 +40,16 @@ public class SpeakFragment extends Fragment
 
         Bitmap bitImage = BitmapFactory.decodeResource(this.getResources(), R.raw.pjm_placeholder);
         imageView.setImageBitmap(bitImage);
+
+        binding.translateButton.setOnClickListener(new View.OnClickListener()
+        {
+            @Override
+            public void onClick(View view)
+            {
+                EditText source = requireView().findViewById(R.id.inputText);
+                source.setText("");
+            }
+        });
     }
 
     @Override
