@@ -13,6 +13,7 @@
     <string name="pauseButton">Pause</string>
     <string name="copyButton">Copy</string>
     <string name="clipboardLabel">translation</string>
+    <string name="cameraError">No camera detected</string>
 
     <!-- Speak screen text-->
     <string name="speakLabel">Speak</string>
@@ -21,5 +22,9 @@
     <string name="settingsLabel">Settings</string>
     <string name="cameraSectionLabel">Camera</string>
     <string name="cameraTypeLabel">Using:</string>
+
+    <!-- User messages-->
+    <string name="cameraPermissionError">Failed to get camera permission, try granting it manually from settings</string>
+    <string name="cameraException">Error connecting to camera</string>
 
 </resources>

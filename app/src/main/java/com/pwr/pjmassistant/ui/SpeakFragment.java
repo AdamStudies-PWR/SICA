@@ -26,7 +26,7 @@ public class SpeakFragment extends Fragment
     private ImageView imageView;
     @Override
     public View onCreateView(
-            LayoutInflater inflater, ViewGroup container,
+            @NonNull LayoutInflater inflater, ViewGroup container,
             Bundle savedInstanceState)
     {
         binding = FragmentSpeakBinding.inflate(inflater, container, false);
@@ -41,14 +41,9 @@ public class SpeakFragment extends Fragment
         Bitmap bitImage = BitmapFactory.decodeResource(this.getResources(), R.raw.pjm_placeholder);
         imageView.setImageBitmap(bitImage);
 
-        binding.translateButton.setOnClickListener(new View.OnClickListener()
-        {
-            @Override
-            public void onClick(View view)
-            {
-                EditText source = requireView().findViewById(R.id.inputText);
-                source.setText("");
-            }
+        binding.translateButton.setOnClickListener(translateButton -> {
+            EditText source = requireView().findViewById(R.id.inputText);
+            source.setText("");
         });
     }
 

@@ -17,8 +17,7 @@ public class HomeFragment extends Fragment
     private FragmentHomeBinding binding;
 
     @Override
-    public View onCreateView(
-            LayoutInflater inflater, ViewGroup container,
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
             Bundle savedInstanceState)
     {
         binding = FragmentHomeBinding.inflate(inflater, container, false);
@@ -29,25 +28,11 @@ public class HomeFragment extends Fragment
     {
         super.onViewCreated(view, savedInstanceState);
 
-        binding.buttonRead.setOnClickListener(new View.OnClickListener()
-        {
-            @Override
-            public void onClick(View view)
-            {
-                NavHostFragment.findNavController(HomeFragment.this)
-                        .navigate(R.id.action_HomeFragment_to_ReadFragment);
-            }
-        });
+        binding.buttonRead.setOnClickListener(buttonRead-> NavHostFragment.findNavController(
+                HomeFragment.this).navigate(R.id.action_HomeFragment_to_ReadFragment));
 
-        binding.buttonSpeak.setOnClickListener(new View.OnClickListener()
-        {
-            @Override
-            public void onClick(View view)
-            {
-                NavHostFragment.findNavController((HomeFragment.this))
-                        .navigate(R.id.action_HomeFragment_to_SpeakFragment);
-            }
-        });
+        binding.buttonSpeak.setOnClickListener(buttonSpeak -> NavHostFragment.findNavController((
+                HomeFragment.this)).navigate(R.id.action_HomeFragment_to_SpeakFragment));
     }
 
     @Override
