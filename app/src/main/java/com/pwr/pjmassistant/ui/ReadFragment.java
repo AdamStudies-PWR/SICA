@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.text.InputType;
@@ -20,24 +21,34 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.OptIn;
+import androidx.camera.camera2.interop.Camera2CameraInfo;
+import androidx.camera.camera2.interop.ExperimentalCamera2Interop;
+import androidx.camera.core.Camera;
+import androidx.camera.core.CameraFilter;
+import androidx.camera.core.CameraInfo;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.Preview;
 import androidx.camera.view.PreviewView;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 
 import com.pwr.pjmassistant.R;
 import com.pwr.pjmassistant.databinding.FragmentReadBinding;
 
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 public class ReadFragment extends Fragment
 {
     private final String TAG = "ui.ReadFragment";
 
+    private static boolean isReloading = true;
     private FragmentReadBinding binding;
     private EditText output;
+    private String cameraId;
 
     private final ActivityResultLauncher<String> requestPermissionLauncher = registerForActivityResult(
             new ActivityResultContracts.RequestPermission(),
@@ -67,6 +78,7 @@ public class ReadFragment extends Fragment
         output.setInputType(InputType.TYPE_NULL);
         output.setTextIsSelectable(true);
 
+        loadSettings();
         if (checkPermissions()) getCamera();
 
         binding.clearButton.setOnClickListener(clearButton -> output.setText(""));
@@ -83,6 +95,13 @@ public class ReadFragment extends Fragment
         });
     }
 
+    private void loadSettings()
+    {
+        String PREFERENCES_KEY = "user-prefs-key";
+        SharedPreferences settings = requireActivity().getApplicationContext().getSharedPreferences(PREFERENCES_KEY, 0);;
+        cameraId = settings.getString("CameraId", "null");
+    }
+
     private boolean checkPermissions()
     {
         if (ActivityCompat.checkSelfPermission(requireActivity().getApplicationContext(),
@@ -94,6 +113,7 @@ public class ReadFragment extends Fragment
         return true;
     }
 
+    @OptIn(markerClass = ExperimentalCamera2Interop.class)
     private void getCamera()
     {
         if (!requireActivity().getApplicationContext().getPackageManager()
@@ -119,7 +139,16 @@ public class ReadFragment extends Fragment
 
             Preview cameraPreview = new Preview.Builder().build();
             cameraPreview.setSurfaceProvider(cameraPreviewView.getSurfaceProvider());
-            CameraSelector cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;
+            CameraSelector cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;;
+
+            List<CameraInfo> cameraInfos = cameraProvider.getAvailableCameraInfos();
+            for (CameraInfo info : cameraInfos)
+            {
+                if (Camera2CameraInfo.from(info).getCameraId().equals(cameraId))
+                {
+                    cameraSelector = info.getCameraSelector();
+                }
+            }
 
             cameraProvider.unbindAll();
             cameraProvider.bindToLifecycle(this, cameraSelector, cameraPreview);
@@ -149,7 +178,22 @@ public class ReadFragment extends Fragment
     public void onDestroyView()
     {
         super.onDestroyView();
+        isReloading = true;
         binding = null;
     }
 
+    @Override
+    public void onResume()
+    {
+        super.onResume();
+        if (isReloading)
+        {
+            isReloading = false;
+            return;
+        }
+
+        getParentFragmentManager().beginTransaction().detach(this).commit();
+        getParentFragmentManager().beginTransaction().attach(this).commit();
+        isReloading = true;
+    }
 }

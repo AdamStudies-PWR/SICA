@@ -1,5 +1,7 @@
 package com.pwr.pjmassistant;
 
+import android.app.Fragment;
+import android.app.FragmentTransaction;
 import android.content.Intent;
 import android.os.Bundle;
 
@@ -12,7 +14,10 @@ import androidx.navigation.ui.NavigationUI;
 
 import com.pwr.pjmassistant.databinding.ActivityMainBinding;
 import com.pwr.pjmassistant.settings.SettingsActivity;
+import com.pwr.pjmassistant.ui.HomeFragment;
+import com.pwr.pjmassistant.ui.ReadFragment;
 
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
