@@ -26,5 +26,6 @@
     <!-- User messages-->
     <string name="cameraPermissionError">Failed to get camera permission, try granting it manually from settings</string>
     <string name="cameraException">Error connecting to camera</string>
+    <string name="model_failed">Failed to load model</string>
 
 </resources>

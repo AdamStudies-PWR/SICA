@@ -24,19 +24,17 @@ import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.camera.camera2.interop.Camera2CameraInfo;
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop;
-import androidx.camera.core.Camera;
-import androidx.camera.core.CameraFilter;
 import androidx.camera.core.CameraInfo;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.Preview;
-import androidx.camera.view.PreviewView;
 import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.camera.view.PreviewView;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
 
 import com.pwr.pjmassistant.R;
 import com.pwr.pjmassistant.databinding.FragmentReadBinding;
+import com.pwr.pjmassistant.model.Model;
 
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -49,6 +47,9 @@ public class ReadFragment extends Fragment
     private FragmentReadBinding binding;
     private EditText output;
     private String cameraId;
+    private Model model;
+    private boolean modelReady = false;
+
 
     private final ActivityResultLauncher<String> requestPermissionLauncher = registerForActivityResult(
             new ActivityResultContracts.RequestPermission(),
@@ -68,6 +69,19 @@ public class ReadFragment extends Fragment
             Bundle savedInstanceState)
     {
         binding = FragmentReadBinding.inflate(inflater, container, false);
+
+        model = new Model("model.tflite");
+
+        if (model.tryLoadModel(requireContext()))
+        {
+            modelReady = true;
+        }
+        else
+        {
+            modelReady = false;
+            Toast.makeText(requireContext(), R.string.model_failed, Toast.LENGTH_SHORT).show();
+        }
+
         return binding.getRoot();
     }
 
