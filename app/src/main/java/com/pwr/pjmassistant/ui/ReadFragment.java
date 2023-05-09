@@ -26,6 +26,7 @@ import androidx.camera.camera2.interop.Camera2CameraInfo;
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop;
 import androidx.camera.core.CameraInfo;
 import androidx.camera.core.CameraSelector;
+import androidx.camera.core.ImageCapture;
 import androidx.camera.core.Preview;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
@@ -50,6 +51,7 @@ public class ReadFragment extends Fragment
     private Model model;
     private int interval;
     private boolean modelReady = false;
+    private boolean started = false;
 
     private final ActivityResultLauncher<String> requestPermissionLauncher = registerForActivityResult(
             new ActivityResultContracts.RequestPermission(),
@@ -93,13 +95,14 @@ public class ReadFragment extends Fragment
         output.setTextIsSelectable(true);
 
         loadSettings();
-        if (checkPermissions()) getCamera();
+        if (checkPermissions())
+        {
+            getCamera();
+            prepareImageCapture();
+        }
 
-        binding.clearButton.setOnClickListener(clearButton -> output.setText(""));
-
-        binding.pauseButton.setOnClickListener(pauseButton -> {
-            // TODO
-        });
+        binding.clearButton.setOnClickListener(this::stopRecognition);
+        binding.useButton.setOnClickListener(this::startRecognition);
 
         binding.copyButton.setOnClickListener(copyButton -> {
             ClipboardManager clipboard = (ClipboardManager) requireActivity().getSystemService(
@@ -175,6 +178,14 @@ public class ReadFragment extends Fragment
         }
     }
 
+    private void prepareImageCapture()
+    {
+        ImageCapture capture = new ImageCapture.Builder()
+                .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+                .setTargetRotation(requireView().getDisplay().getRotation())
+                .build();
+    }
+
     private void handleCameraError()
     {
         Toast.makeText(requireActivity().getApplicationContext(), R.string.cameraException,
@@ -187,6 +198,24 @@ public class ReadFragment extends Fragment
         translatedTextView.setVisibility(View.GONE);
         cameraView.setVisibility(View.VISIBLE);
         cameraPreviewView.setVisibility(View.GONE);
+    }
+
+    private void startRecognition(View view)
+    {
+        if (!modelReady)
+        {
+            return;
+        }
+
+        output.setText("");
+
+        started = true;
+    }
+
+    private void stopRecognition(View view)
+    {
+        output.setText("");
+        started = false;
     }
 
     @Override

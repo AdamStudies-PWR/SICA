@@ -59,7 +59,7 @@
                         android:layout_height="wrap_content"
                         android:fontFamily="sans-serif-condensed"
                         android:text="@string/cameraSectionLabel"
-                        android:paddingRight="5dp"
+                        android:paddingEnd="5dp"
                         android:textSize="12sp" />
 
                     <View

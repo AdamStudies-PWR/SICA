@@ -10,7 +10,9 @@
     <!-- Read screen text-->
     <string name="readLabel">Read</string>
     <string name="clearButton">Clear</string>
-    <string name="pauseButton">Pause</string>
+    <string name="pauseText">Pause</string>
+    <string name="startText">Start</string>
+    <string name="resumeText">Resume</string>
     <string name="copyButton">Copy</string>
     <string name="clipboardLabel">translation</string>
     <string name="cameraError">No camera detected</string>
