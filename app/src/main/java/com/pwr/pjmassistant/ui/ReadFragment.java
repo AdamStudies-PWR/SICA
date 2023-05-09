@@ -48,8 +48,8 @@ public class ReadFragment extends Fragment
     private EditText output;
     private String cameraId;
     private Model model;
+    private int interval;
     private boolean modelReady = false;
-
 
     private final ActivityResultLauncher<String> requestPermissionLauncher = registerForActivityResult(
             new ActivityResultContracts.RequestPermission(),
@@ -114,6 +114,7 @@ public class ReadFragment extends Fragment
         String PREFERENCES_KEY = "user-prefs-key";
         SharedPreferences settings = requireActivity().getApplicationContext().getSharedPreferences(PREFERENCES_KEY, 0);;
         cameraId = settings.getString("CameraId", "null");
+        interval = settings.getInt("interval", 500);
     }
 
     private boolean checkPermissions()

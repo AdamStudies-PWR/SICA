@@ -22,6 +22,9 @@
     <string name="settingsLabel">Settings</string>
     <string name="cameraSectionLabel">Camera</string>
     <string name="cameraTypeLabel">Using:</string>
+    <string name="translationSectionLabel">Translation</string>
+    <string name="imageIntervalLabel">Interval</string>
+    <string name="imageIntervalDefault">500</string>
 
     <!-- User messages-->
     <string name="cameraPermissionError">Failed to get camera permission, try granting it manually from settings</string>
