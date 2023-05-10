@@ -1,0 +1,15 @@
+.App {
+    font-family: sans-serif;
+    text-align: center;
+
+
+}
+#first {
+    position: relative;
+    float: left;
+}
+
+#second {
+    position: relative;
+    float: left;
+}
