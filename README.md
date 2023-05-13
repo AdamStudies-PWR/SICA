@@ -13,3 +13,5 @@ Tytuł: **Asystent Do komunikacji w języku migowym**:
 
 Składowe:
 * [andorid](https://github.com/AdamStudies-PWR/SICA/tree/android)
+* [new_model](https://github.com/AdamStudies-PWR/SICA/tree/new_model)
+* [old_model](https://github.com/AdamStudies-PWR/SICA/tree/old_model)
