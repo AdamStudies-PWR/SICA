@@ -1,5 +1,4 @@
- 
 item {
-    id: 1
-    name: 'hand'
+  id: 1
+  name: 'hand'
 }

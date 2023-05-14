@@ -1,65 +1,48 @@
-""" Sample TensorFlow XML-to-TFRecord converter
+# Script to create TFRecord files from train and test dataset folders
+# Originally from GitHub user datitran: https://github.com/datitran/raccoon_dataset/blob/master/generate_tfrecord.py
 
-usage: generate_tfrecord.py [-h] [-x XML_DIR] [-l LABELS_PATH] [-o OUTPUT_PATH] [-i IMAGE_DIR] [-c CSV_PATH]
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -x XML_DIR, --xml_dir XML_DIR
-                        Path to the folder where the input .xml files are stored.
-  -l LABELS_PATH, --labels_path LABELS_PATH
-                        Path to the labels (.pbtxt) file.
-  -o OUTPUT_PATH, --output_path OUTPUT_PATH
-                        Path of output TFRecord (.record) file.
-  -i IMAGE_DIR, --image_dir IMAGE_DIR
-                        Path to the folder where the input image files are stored. Defaults to the same directory as XML_DIR.
-  -c CSV_PATH, --csv_path CSV_PATH
-                        Path of output .csv file. If none provided, then no file will be written.
 """
+Usage:
+  # From tensorflow/models/
+  # Create train data:
+  python generate_tfrecord.py --xml_dir=images/train --image_dir=images/train --output_path=train.record
+
+  # Create test data:
+  python generate_tfrecord.py --xml_dir=images/test  --image_dir=images/test --output_path=test.record
+"""
+from __future__ import division
+from __future__ import print_function
+from __future__ import absolute_import
 
 import os
 import glob
-import pandas as pd
 import io
 import xml.etree.ElementTree as ET
-import argparse
+import pandas as pd
 
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'    # Suppress TensorFlow logging (1)
-import tensorflow.compat.v1 as tf
+from tensorflow.python.framework.versions import VERSION
+if VERSION >= "2.0.0a0":
+    import tensorflow.compat.v1 as tf
+else:
+    import tensorflow as tf
+
 from PIL import Image
 from object_detection.utils import dataset_util, label_map_util
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 
-# Initiate argument parser
-parser = argparse.ArgumentParser(
-    description="Sample TensorFlow XML-to-TFRecord converter")
-parser.add_argument("-x",
-                    "--xml_dir",
-                    help="Path to the folder where the input .xml files are stored.",
-                    type=str)
-parser.add_argument("-l",
-                    "--labels_path",
-                    help="Path to the labels (.pbtxt) file.", type=str)
-parser.add_argument("-o",
-                    "--output_path",
-                    help="Path of output TFRecord (.record) file.", type=str)
-parser.add_argument("-i",
-                    "--image_dir",
-                    help="Path to the folder where the input image files are stored. "
-                         "Defaults to the same directory as XML_DIR.",
-                    type=str, default=None)
-parser.add_argument("-c",
-                    "--csv_path",
-                    help="Path of output .csv file. If none provided, then no file will be "
-                         "written.",
-                    type=str, default=None)
+flags = tf.app.flags
+flags.DEFINE_string('xml_dir', '', 'Path to the CSV input')
+flags.DEFINE_string('image_dir', '', 'Path to the image directory')
+flags.DEFINE_string('output_path', '', 'Path to output TFRecord')
+FLAGS = flags.FLAGS
 
-args = parser.parse_args()
 
-if args.image_dir is None:
-    args.image_dir = args.xml_dir
-
-label_map = label_map_util.load_labelmap(args.labels_path)
-label_map_dict = label_map_util.get_label_map_dict(label_map)
+def class_text_to_int(row_label):
+    if row_label == 'hand':
+        return 1
+    else:
+        print("GOT NOT A HAND!!!!!!!!!!!!!!!!")
+        None
 
 
 def xml_to_csv(path):
@@ -99,10 +82,6 @@ def xml_to_csv(path):
                    'class', 'xmin', 'ymin', 'xmax', 'ymax']
     xml_df = pd.DataFrame(xml_list, columns=column_name)
     return xml_df
-
-
-def class_text_to_int(row_label):
-    return label_map_dict[row_label]
 
 
 def split(df, group):
@@ -153,20 +132,20 @@ def create_tf_example(group, path):
 
 
 def main(_):
+    # Load and prepare data
+    writer = tf.python_io.TFRecordWriter(FLAGS.output_path)
+    path = os.path.join(os.getcwd(), FLAGS.image_dir)
+    examples = xml_to_csv(FLAGS.xml_dir)
 
-    writer = tf.python_io.TFRecordWriter(args.output_path)
-    path = os.path.join(args.image_dir)
-    examples = xml_to_csv(args.xml_dir)
+    # Create TFRecord files
     grouped = split(examples, 'filename')
     for group in grouped:
         tf_example = create_tf_example(group, path)
         writer.write(tf_example.SerializeToString())
-    writer.close()
-    print('Successfully created the TFRecord file: {}'.format(args.output_path))
-    if args.csv_path is not None:
-        examples.to_csv(args.csv_path, index=None)
-        print('Successfully created the CSV file: {}'.format(args.csv_path))
 
+    writer.close()
+    output_path = os.path.join(os.getcwd(), FLAGS.output_path)
+    print('Successfully created the TFRecords: {}'.format(output_path))
 
 if __name__ == '__main__':
     tf.app.run()
