@@ -1,3 +1,7 @@
 # ENV
 .venv
 .venv/
+
+# Checkpoints
+checkpoint
+checkpoint/
