@@ -4,8 +4,6 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.util.Log;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import org.tensorflow.lite.support.image.ImageProcessor;
 import org.tensorflow.lite.support.image.TensorImage;
 import org.tensorflow.lite.task.vision.classifier.Classifications;
@@ -30,11 +28,16 @@ public class Model
     {
         try
         {
-           model = ImageClassifier.createFromFile(context, modelName);
+            model = ImageClassifier.createFromFile(context, modelName);
            return true;
         } catch (IOException error)
         {
             Log.e(TAG, "Failed to load model file: " + error);
+            return false;
+        }
+        catch (IllegalStateException error)
+        {
+            Log.e(TAG, "Model loaded but: " + error);
             return false;
         }
     }

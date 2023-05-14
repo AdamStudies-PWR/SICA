@@ -6,12 +6,19 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
+import android.media.Image;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.InputType;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -26,7 +33,9 @@ import androidx.camera.camera2.interop.Camera2CameraInfo;
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop;
 import androidx.camera.core.CameraInfo;
 import androidx.camera.core.CameraSelector;
+import androidx.camera.core.ExperimentalGetImage;
 import androidx.camera.core.ImageCapture;
+import androidx.camera.core.ImageProxy;
 import androidx.camera.core.Preview;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
@@ -37,8 +46,11 @@ import com.pwr.pjmassistant.R;
 import com.pwr.pjmassistant.databinding.FragmentReadBinding;
 import com.pwr.pjmassistant.model.Model;
 
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 public class ReadFragment extends Fragment
 {
@@ -46,12 +58,15 @@ public class ReadFragment extends Fragment
 
     private static boolean isReloading = true;
     private FragmentReadBinding binding;
+    private ImageCapture capture;
     private EditText output;
     private String cameraId;
     private Model model;
     private int interval;
     private boolean modelReady = false;
+    private Executor executor = Executors.newSingleThreadExecutor();
     private boolean started = false;
+    private static Handler threadHandler;
 
     private final ActivityResultLauncher<String> requestPermissionLauncher = registerForActivityResult(
             new ActivityResultContracts.RequestPermission(),
@@ -84,6 +99,8 @@ public class ReadFragment extends Fragment
             Toast.makeText(requireContext(), R.string.model_failed, Toast.LENGTH_SHORT).show();
         }
 
+        threadHandler = new Handler(Looper.getMainLooper());
+
         return binding.getRoot();
     }
 
@@ -98,11 +115,10 @@ public class ReadFragment extends Fragment
         if (checkPermissions())
         {
             getCamera();
-            prepareImageCapture();
         }
 
-        binding.clearButton.setOnClickListener(this::stopRecognition);
-        binding.useButton.setOnClickListener(this::startRecognition);
+        binding.clearButton.setOnClickListener(this::clearView);
+        binding.useButton.setOnClickListener(this::recognitionController);
 
         binding.copyButton.setOnClickListener(copyButton -> {
             ClipboardManager clipboard = (ClipboardManager) requireActivity().getSystemService(
@@ -168,8 +184,10 @@ public class ReadFragment extends Fragment
                 }
             }
 
+            prepareImageCapture();
+
             cameraProvider.unbindAll();
-            cameraProvider.bindToLifecycle(this, cameraSelector, cameraPreview);
+            cameraProvider.bindToLifecycle(this, cameraSelector, capture, cameraPreview);
         }
         catch (ExecutionException | InterruptedException error)
         {
@@ -180,7 +198,7 @@ public class ReadFragment extends Fragment
 
     private void prepareImageCapture()
     {
-        ImageCapture capture = new ImageCapture.Builder()
+        capture = new ImageCapture.Builder()
                 .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
                 .setTargetRotation(requireView().getDisplay().getRotation())
                 .build();
@@ -200,21 +218,81 @@ public class ReadFragment extends Fragment
         cameraPreviewView.setVisibility(View.GONE);
     }
 
-    private void startRecognition(View view)
+    @OptIn(markerClass = ExperimentalGetImage.class)
+    private void getImageLoop()
+    {
+        if (!started)
+        {
+            return;
+        }
+        capture.takePicture(executor, new ImageCapture.OnImageCapturedCallback()
+        {
+            @Override
+            public void onCaptureSuccess(@NonNull ImageProxy proxy)
+            {
+                Image image = proxy.getImage();
+                assert image != null;
+                ByteBuffer buffer = image.getPlanes()[0].getBuffer();
+                byte[] bytes = new byte[buffer.capacity()];
+                buffer.get(bytes);
+                getImage(BitmapFactory.decodeByteArray(bytes, 0, bytes.length, null));
+                super.onCaptureSuccess(proxy);
+            }
+        });
+
+        threadHandler.postDelayed(this::getImageLoop, interval);
+    }
+
+    private void getImage(Bitmap image)
+    {
+        Matrix matrix = new Matrix();
+        matrix.postRotate(90);
+        image = Bitmap.createBitmap(image, 0, 0, image.getWidth(), image.getHeight(), matrix, true);
+        String symbol = model.recognizeSymbol(image);
+
+        requireActivity().runOnUiThread(() -> {
+            EditText result = requireView().findViewById(R.id.translatedText);
+            String text = String.valueOf(result.getText());
+            text = text + symbol;
+            result.setText(text);
+        });
+    }
+
+    private void recognitionController(View view)
     {
         if (!modelReady)
         {
             return;
         }
 
-        output.setText("");
+        Button button = requireActivity().findViewById(R.id.useButton);
+        if (started)
+        {
+            stopRecognition();
+            button.setText(R.string.startText);
+        }
+        else
+        {
+            startRecognition();
+            button.setText(R.string.stopText);
+        }
+    }
 
+    private void startRecognition()
+    {
+        output.setText("");
+        threadHandler.postDelayed(this::getImageLoop, interval);
         started = true;
     }
 
-    private void stopRecognition(View view)
+    private void clearView(View view)
     {
-        output.setText("");
+        EditText text = requireActivity().findViewById(R.id.translatedText);
+        text.setText("");
+    }
+
+    private void stopRecognition()
+    {
         started = false;
     }
 
