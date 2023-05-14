@@ -1,0 +1,10 @@
+# zip file
+hand_detection/archive.zip
+
+# template
+archive
+archive/
+
+# env
+.venv
+.venv/

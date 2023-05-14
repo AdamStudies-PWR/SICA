@@ -1,0 +1,26 @@
+<annotation>
+	<folder>Bear</folder>
+	<filename>440b99be9de58830.jpg</filename>
+	<path>440b99be9de58830.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>512</width>
+		<height>512</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>hand</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>259</xmin>
+			<ymin>474</ymin>
+			<xmax>302</xmax>
+			<ymax>511</ymax>
+		</bndbox>
+	</object>
+</annotation>
