@@ -29,14 +29,14 @@ android {
     buildFeatures {
         viewBinding true
     }
-
-    aaptOptions {
-        noCompress "tflite"
-        noCompress "lite"
+    androidResources {
+        noCompress 'lite'
     }
+
 }
 
 dependencies {
+    // camera
     def camerax_version = "1.2.2"
     implementation "androidx.camera:camera-core:${camerax_version}"
     implementation "androidx.camera:camera-camera2:${camerax_version}"
@@ -50,8 +50,9 @@ dependencies {
     implementation 'org.tensorflow:tensorflow-lite-gpu:2.9.0'
     implementation 'org.tensorflow:tensorflow-lite-gpu-delegate-plugin:0.4.0'
 
+    // android
     implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'com.google.android.material:material:1.8.0'
+    implementation 'com.google.android.material:material:1.9.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'androidx.navigation:navigation-fragment:2.5.3'
     implementation 'androidx.navigation:navigation-ui:2.5.3'
