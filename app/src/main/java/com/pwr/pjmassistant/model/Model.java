@@ -28,11 +28,16 @@ public class Model
     {
         try
         {
-           model = ImageClassifier.createFromFile(context, modelName);
+            model = ImageClassifier.createFromFile(context, modelName);
            return true;
         } catch (IOException error)
         {
             Log.e(TAG, "Failed to load model file: " + error);
+            return false;
+        }
+        catch (IllegalStateException error)
+        {
+            Log.e(TAG, "Model loaded but: " + error);
             return false;
         }
     }

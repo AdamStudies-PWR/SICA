@@ -32,8 +32,7 @@ public class SettingsActivity extends AppCompatActivity
 {
     private final String TAG = "settings.SettingsActivity";
     private final String PREFERENCES_KEY = "user-prefs-key";
-    ArrayList<String> cameraList;
-
+    private ArrayList<String> cameraList;
     private SharedPreferences settings;
 
     private final ActivityResultLauncher<String> requestPermissionLauncher = registerForActivityResult(
@@ -62,7 +61,7 @@ public class SettingsActivity extends AppCompatActivity
         getAvailableCameras();
 
         EditText intervalText = requireViewById(R.id.editTextTranslationInterval);
-        intervalText.setText(settings.getInt("interval", 500));
+        intervalText.setText(String.valueOf(settings.getInt("interval", 500)));
 
         Spinner cameraSpinner = requireViewById(R.id.modeSpinner);
         cameraSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener()

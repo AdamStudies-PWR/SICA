@@ -12,7 +12,7 @@
     <string name="clearButton">Clear</string>
     <string name="pauseText">Pause</string>
     <string name="startText">Start</string>
-    <string name="resumeText">Resume</string>
+    <string name="stopText">Stop</string>
     <string name="copyButton">Copy</string>
     <string name="clipboardLabel">translation</string>
     <string name="cameraError">No camera detected</string>
