@@ -8,11 +8,11 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 
 
-# path = "../../data_set/SICA/american/"
-path = "../../data_set/SICA/old_data/"
+path = "../../data_set/SICA/american/"
+# path = "../../data_set/SICA/old_data/"
 
-# model_name = "model_american.tflite"
-model_name = "model_polish.tflite"
+model_name = "model_american.tflite"
+# model_name = "model_polish.tflite"
 
 
 files = os.listdir(path)
@@ -22,8 +22,8 @@ print(files)
 images = []
 labels = []
 
+num_label = 0
 for file in files:
-    num_label = 0
     sub_dir = os.listdir(os.path.join(path, file))
     print(file + ": " + str(len(sub_dir)))
     for sub_file in sub_dir:
