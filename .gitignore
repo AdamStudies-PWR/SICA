@@ -1,5 +1,5 @@
-# zip file
-hand_detection/archive.zip
+# zip files
+*zip
 
 # template
 archive
@@ -8,3 +8,7 @@ archive/
 # env
 .venv
 .venv/
+
+# generated files too large for git
+*.record
+
