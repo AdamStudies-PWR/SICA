@@ -1,3 +1,8 @@
 # env
 .venv
 .venv/
+
+# training
+/model/train
+checkpoint
+ckpt-*
