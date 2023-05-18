@@ -4,5 +4,6 @@
 
 # training
 /model/train
+/model/saved_model
 checkpoint
 ckpt-*
