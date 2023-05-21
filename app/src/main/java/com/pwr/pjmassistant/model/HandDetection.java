@@ -34,15 +34,8 @@ public class HandDetection
     private final String modelName;
 
     private Interpreter interpreter;
-    private List<String> labelList;
 
     private final int INPUT_SIZE;
-    private int PIXEL_SIZE = 3;
-    private int IMAGE_MEAN = 0;
-    private final float IMAGE_STD = 255.0f;
-
-    private int height = 0;
-    private int width = 0;
 
     private GpuDelegate gpuDelegate;
 
@@ -62,7 +55,6 @@ public class HandDetection
         try
         {
             interpreter = new Interpreter(loadModel(manager), options);
-            labelList = loadLabels(manager);
             return true;
         }
         catch (IOException error)
@@ -83,23 +75,7 @@ public class HandDetection
         return channel.map(FileChannel.MapMode.READ_ONLY, offset, length);
     }
 
-    private List<String> loadLabels(AssetManager manager) throws IOException
-    {
-        List<String> labels = new ArrayList<>();
-        BufferedReader reader = new BufferedReader(
-                new InputStreamReader(manager.open("labelmap.txt")));
-
-        String line;
-        while((line = reader.readLine()) != null)
-        {
-            labels.add(line);
-        }
-        reader.close();
-
-        return labels;
-    }
-
-    public Mat getHand(Mat inputImage)
+    public HandData getHand(Mat inputImage)
     {
         Log.d(TAG, "getHand");
 
@@ -109,8 +85,8 @@ public class HandDetection
         Bitmap bitmap = Bitmap.createBitmap(rotatedImage.cols(), rotatedImage.rows(),
                 Bitmap.Config.ARGB_8888);
         Utils.matToBitmap(rotatedImage, bitmap);
-        height = bitmap.getHeight();
-        width = bitmap.getWidth();
+        int height = bitmap.getHeight();
+        int width = bitmap.getWidth();
         bitmap = Bitmap.createScaledBitmap(bitmap, INPUT_SIZE, INPUT_SIZE, false);
 
         ByteBuffer bufferedImage = convertBitmapToBytes(bitmap);
@@ -146,17 +122,12 @@ public class HandDetection
                 float left = (float) Array.get(box, 1) * width;
                 float right = (float) Array.get(box, 3) * width;
 
-                Imgproc.rectangle(rotatedImage, new Point(left, top), new Point(right, bottom),
-                        new Scalar(0, 0, 255, 255), 3);
-                Imgproc.putText(rotatedImage, labelList.get((int) prediction), new Point(left, top),
-                        3, 2, new Scalar(255, 0, 0, 255), 2);
-
-                break;
+                return new HandData(true, rotatedImage, height, width, top, bottom, left,
+                        right);
             }
         }
 
-        Core.flip(rotatedImage.t(), inputImage, Core.ROTATE_90_CLOCKWISE);
-        return inputImage;
+        return new HandData(false, rotatedImage);
     }
 
     private ByteBuffer convertBitmapToBytes(Bitmap bitmap)
@@ -174,6 +145,7 @@ public class HandDetection
             for (int j=0; j<INPUT_SIZE; ++j)
             {
                 final int value = values[pixels++];
+                float IMAGE_STD = 255.0f;
                 buffer.putFloat(((value >> 16) & 0xFF) / IMAGE_STD);
                 buffer.putFloat(((value >> 8) & 0xFF) / IMAGE_STD);
                 buffer.putFloat(((value) & 0xFF) / IMAGE_STD);

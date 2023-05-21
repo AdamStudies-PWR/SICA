@@ -27,7 +27,9 @@ import androidx.fragment.app.Fragment;
 
 import com.pwr.pjmassistant.R;
 import com.pwr.pjmassistant.databinding.FragmentReadBinding;
+import com.pwr.pjmassistant.model.HandData;
 import com.pwr.pjmassistant.model.HandDetection;
+import com.pwr.pjmassistant.model.SignDetection;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
@@ -44,6 +46,7 @@ public class ReadFragment extends Fragment implements CameraBridgeViewBase.CvCam
     private FragmentReadBinding binding;
     private EditText output;
     private HandDetection handDetection;
+    private SignDetection signRecognition;
     private boolean modelReady = false;
     private boolean started = false;
 
@@ -85,8 +88,10 @@ public class ReadFragment extends Fragment implements CameraBridgeViewBase.CvCam
         };
 
         handDetection = new HandDetection("model.tflite", 300);
+        signRecognition = new SignDetection("model_american.tflite", "american_labels.txt", 96);
 
-        if (handDetection.tryLoadModel(requireContext().getAssets()))
+        if (handDetection.tryLoadModel(requireContext().getAssets())
+                && signRecognition.tryLoadModel(requireContext().getAssets()))
         {
             modelReady = true;
         }
@@ -202,7 +207,8 @@ public class ReadFragment extends Fragment implements CameraBridgeViewBase.CvCam
 
         if (modelReady && started)
         {
-            mRgba = handDetection.getHand(mRgba);
+            HandData data = handDetection.getHand(mRgba);
+            mRgba = signRecognition.getSign(data);
         }
 
         return mRgba;
