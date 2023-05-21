@@ -20,10 +20,25 @@ import com.pwr.pjmassistant.ui.ReadFragment;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
+
+import org.opencv.android.OpenCVLoader;
 
 public class MainActivity extends AppCompatActivity
 {
+    private static final String TAG = "MainActivity";
 
+    static
+    {
+        if (OpenCVLoader.initDebug())
+        {
+            Log.d(TAG, "OpenCV successfully loaded");
+        }
+        else
+        {
+            Log.d(TAG, "Failed to load OpenCV");
+        }
+    }
     private AppBarConfiguration appBarConfiguration;
     private ActivityMainBinding binding;
 
@@ -56,9 +71,10 @@ public class MainActivity extends AppCompatActivity
 
         if (id == R.id.action_settings)
         {
-            Intent intent = new Intent(this, SettingsActivity.class);
-            startActivity(intent);
-            return true;
+            Toast.makeText(getApplicationContext(), "Settings are currently dissabled", Toast.LENGTH_SHORT).show();
+            // Intent intent = new Intent(this, SettingsActivity.class);
+            // startActivity(intent);
+            // return true;
         }
 
         return super.onOptionsItemSelected(item);

@@ -4,20 +4,14 @@ import android.Manifest;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Matrix;
-import android.media.Image;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.text.InputType;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -28,58 +22,47 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.OptIn;
-import androidx.camera.camera2.interop.Camera2CameraInfo;
-import androidx.camera.camera2.interop.ExperimentalCamera2Interop;
-import androidx.camera.core.CameraInfo;
-import androidx.camera.core.CameraSelector;
-import androidx.camera.core.ExperimentalGetImage;
-import androidx.camera.core.ImageCapture;
-import androidx.camera.core.ImageProxy;
-import androidx.camera.core.Preview;
-import androidx.camera.lifecycle.ProcessCameraProvider;
-import androidx.camera.view.PreviewView;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 
 import com.pwr.pjmassistant.R;
 import com.pwr.pjmassistant.databinding.FragmentReadBinding;
-import com.pwr.pjmassistant.model.Model;
+import com.pwr.pjmassistant.model.HandDetection;
 
-import java.nio.ByteBuffer;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import org.opencv.android.BaseLoaderCallback;
+import org.opencv.android.CameraBridgeViewBase;
+import org.opencv.android.LoaderCallbackInterface;
+import org.opencv.android.OpenCVLoader;
+import org.opencv.core.CvType;
+import org.opencv.core.Mat;
 
-public class ReadFragment extends Fragment
+public class ReadFragment extends Fragment implements CameraBridgeViewBase.CvCameraViewListener2
 {
     private final String TAG = "ui.ReadFragment";
 
     private static boolean isReloading = true;
     private FragmentReadBinding binding;
-    private ImageCapture capture;
     private EditText output;
-    private String cameraId;
-    private Model model;
-    private int interval;
+    private HandDetection handDetection;
     private boolean modelReady = false;
-    private Executor executor = Executors.newSingleThreadExecutor();
     private boolean started = false;
-    private static Handler threadHandler;
 
-    private final ActivityResultLauncher<String> requestPermissionLauncher = registerForActivityResult(
-            new ActivityResultContracts.RequestPermission(),
-            result -> {
-                if (result) { getCamera(); }
+    private Mat mRgba;
+    private Mat mGray;
+
+    private CameraBridgeViewBase cameraBridgeViewBase;
+    private BaseLoaderCallback loaderCallback;
+
+    private final ActivityResultLauncher<String> requestPermissionLauncher
+            = registerForActivityResult(new ActivityResultContracts.RequestPermission(), result -> {
+                if (result) { startCamera(); }
                 else
                 {
-                    Toast.makeText(requireActivity().getApplicationContext(), R.string.cameraPermissionError,
-                            Toast.LENGTH_SHORT).show();
+                    Toast.makeText(requireActivity().getApplicationContext(),
+                            R.string.cameraPermissionError, Toast.LENGTH_SHORT).show();
                     handleCameraError();
                 }
-            }
-    );
+            });
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
@@ -87,9 +70,24 @@ public class ReadFragment extends Fragment
     {
         binding = FragmentReadBinding.inflate(inflater, container, false);
 
-        model = new Model("model.tflite");
+        loaderCallback = new BaseLoaderCallback(requireContext())
+        {
+            @Override
+            public void onManagerConnected(int status)
+            {
+                if (status == LoaderCallbackInterface.SUCCESS)
+                {
+                    Log.i(TAG, "OpenCv loaded");
+                    cameraBridgeViewBase.enableView();
+                }
 
-        if (model.tryLoadModel(requireContext()))
+                super.onManagerConnected(status);
+            }
+        };
+
+        handDetection = new HandDetection("hand_detection.tflite");
+
+        if (handDetection.tryLoadModel(requireContext()))
         {
             modelReady = true;
         }
@@ -99,22 +97,22 @@ public class ReadFragment extends Fragment
             Toast.makeText(requireContext(), R.string.model_failed, Toast.LENGTH_SHORT).show();
         }
 
-        threadHandler = new Handler(Looper.getMainLooper());
-
         return binding.getRoot();
     }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState)
     {
+        requireActivity().getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        cameraBridgeViewBase = requireView().findViewById(R.id.cameraPreview);
+
         output = requireView().findViewById(R.id.translatedText);
         output.setInputType(InputType.TYPE_NULL);
         output.setTextIsSelectable(true);
 
-        loadSettings();
         if (checkPermissions())
         {
-            getCamera();
+            startCamera();
         }
 
         binding.clearButton.setOnClickListener(this::clearView);
@@ -128,12 +126,100 @@ public class ReadFragment extends Fragment
         });
     }
 
-    private void loadSettings()
+    @Override
+    public void onDestroyView()
     {
-        String PREFERENCES_KEY = "user-prefs-key";
-        SharedPreferences settings = requireActivity().getApplicationContext().getSharedPreferences(PREFERENCES_KEY, 0);;
-        cameraId = settings.getString("CameraId", "null");
-        interval = settings.getInt("interval", 500);
+        super.onDestroyView();
+
+        isReloading = true;
+        binding = null;
+    }
+
+    @Override
+    public void onResume()
+    {
+        super.onResume();
+
+        if (OpenCVLoader.initDebug())
+        {
+            Log.d(TAG, "OpenCv is initialized");
+            loaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
+        }
+        else
+        {
+            Log.d(TAG, "OpenCv not loaded, attempting to reinitialize");
+            OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_4_0, requireContext(), loaderCallback);
+        }
+
+        if (isReloading)
+        {
+            isReloading = false;
+            return;
+        }
+
+        getParentFragmentManager().beginTransaction().detach(this).commit();
+        getParentFragmentManager().beginTransaction().attach(this).commit();
+        isReloading = true;
+    }
+
+    @Override
+    public void onPause()
+    {
+        super.onPause();
+        if (cameraBridgeViewBase != null)
+        {
+            cameraBridgeViewBase.disableView();
+        }
+    }
+
+    @Override
+    public void onDestroy()
+    {
+        super.onDestroy();
+
+        if (cameraBridgeViewBase != null)
+        {
+            cameraBridgeViewBase.disableView();
+        }
+    }
+
+    @Override
+    public void onCameraViewStarted(int width, int height)
+    {
+        Log.i(TAG, "cameraView was started");
+        mRgba = new Mat(height, width, CvType.CV_8UC4);
+        mGray = new Mat(height, width, CvType.CV_8UC1);
+    }
+
+    @Override
+    public void onCameraViewStopped()
+    {
+        mRgba.release();
+    }
+
+    @Override
+    public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame)
+    {
+        mRgba = inputFrame.rgba();
+        mGray = inputFrame.gray();
+
+        return mRgba;
+    }
+
+    private void startCamera()
+    {
+        Log.i(TAG, "start camera called");
+
+        TextView cameraError = requireView().findViewById(R.id.cameraInfo);
+        TextView translatedTextView = requireView().findViewById(R.id.translatedText);
+        ImageView cameraView = requireView().findViewById(R.id.cameraView);
+        cameraError.setVisibility(View.GONE);
+        cameraView.setVisibility(View.GONE);
+        translatedTextView.setVisibility(View.VISIBLE);
+
+        cameraBridgeViewBase.setVisibility(View.VISIBLE);
+        cameraBridgeViewBase.setCameraPermissionGranted();
+        cameraBridgeViewBase.setCvCameraViewListener(this);
     }
 
     private boolean checkPermissions()
@@ -147,115 +233,17 @@ public class ReadFragment extends Fragment
         return true;
     }
 
-    @OptIn(markerClass = ExperimentalCamera2Interop.class)
-    private void getCamera()
-    {
-        if (!requireActivity().getApplicationContext().getPackageManager()
-                .hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY))
-        {
-            handleCameraError();
-            return;
-        }
-
-        PreviewView cameraPreviewView = requireView().findViewById(R.id.cameraPreview);
-        TextView cameraError = requireActivity().findViewById(R.id.cameraInfo);
-        TextView translatedTextView = requireView().findViewById(R.id.translatedText);
-        ImageView cameraView = requireView().findViewById(R.id.cameraView);
-        cameraError.setVisibility(View.GONE);
-        cameraView.setVisibility(View.GONE);
-        translatedTextView.setVisibility(View.VISIBLE);
-        cameraPreviewView.setVisibility(View.VISIBLE);
-
-        try
-        {
-            ProcessCameraProvider cameraProvider = ProcessCameraProvider.getInstance(
-                    requireActivity().getApplicationContext()).get();
-
-            Preview cameraPreview = new Preview.Builder().build();
-            cameraPreview.setSurfaceProvider(cameraPreviewView.getSurfaceProvider());
-            CameraSelector cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;;
-
-            List<CameraInfo> cameraInfos = cameraProvider.getAvailableCameraInfos();
-            for (CameraInfo info : cameraInfos)
-            {
-                if (Camera2CameraInfo.from(info).getCameraId().equals(cameraId))
-                {
-                    cameraSelector = info.getCameraSelector();
-                }
-            }
-
-            prepareImageCapture();
-
-            cameraProvider.unbindAll();
-            cameraProvider.bindToLifecycle(this, cameraSelector, capture, cameraPreview);
-        }
-        catch (ExecutionException | InterruptedException error)
-        {
-            Log.e(TAG, error.getMessage());
-            handleCameraError();
-        }
-    }
-
-    private void prepareImageCapture()
-    {
-        capture = new ImageCapture.Builder()
-                .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
-                .setTargetRotation(requireView().getDisplay().getRotation())
-                .build();
-    }
-
     private void handleCameraError()
     {
         Toast.makeText(requireActivity().getApplicationContext(), R.string.cameraException,
                 Toast.LENGTH_SHORT).show();
-        PreviewView cameraPreviewView = requireView().findViewById(R.id.cameraPreview);
         TextView translatedTextView = requireView().findViewById(R.id.translatedText);
         TextView cameraError = requireActivity().findViewById(R.id.cameraInfo);
         ImageView cameraView = requireView().findViewById(R.id.cameraView);
         cameraError.setVisibility(View.VISIBLE);
         translatedTextView.setVisibility(View.GONE);
         cameraView.setVisibility(View.VISIBLE);
-        cameraPreviewView.setVisibility(View.GONE);
-    }
-
-    @OptIn(markerClass = ExperimentalGetImage.class)
-    private void getImageLoop()
-    {
-        if (!started)
-        {
-            return;
-        }
-        capture.takePicture(executor, new ImageCapture.OnImageCapturedCallback()
-        {
-            @Override
-            public void onCaptureSuccess(@NonNull ImageProxy proxy)
-            {
-                Image image = proxy.getImage();
-                assert image != null;
-                ByteBuffer buffer = image.getPlanes()[0].getBuffer();
-                byte[] bytes = new byte[buffer.capacity()];
-                buffer.get(bytes);
-                getImage(BitmapFactory.decodeByteArray(bytes, 0, bytes.length, null));
-                super.onCaptureSuccess(proxy);
-            }
-        });
-
-        threadHandler.postDelayed(this::getImageLoop, interval);
-    }
-
-    private void getImage(Bitmap image)
-    {
-        Matrix matrix = new Matrix();
-        matrix.postRotate(90);
-        image = Bitmap.createBitmap(image, 0, 0, image.getWidth(), image.getHeight(), matrix, true);
-        String symbol = model.recognizeSymbol(image);
-
-        requireActivity().runOnUiThread(() -> {
-            EditText result = requireView().findViewById(R.id.translatedText);
-            String text = String.valueOf(result.getText());
-            text = text + symbol;
-            result.setText(text);
-        });
+        cameraBridgeViewBase.setVisibility(View.GONE);
     }
 
     private void recognitionController(View view)
@@ -281,41 +269,17 @@ public class ReadFragment extends Fragment
     private void startRecognition()
     {
         output.setText("");
-        threadHandler.postDelayed(this::getImageLoop, interval);
-        started = true;
+        // TODO: do something here to start grabing hands
     }
 
     private void clearView(View view)
     {
-        EditText text = requireActivity().findViewById(R.id.translatedText);
+        EditText text = requireView().findViewById(R.id.translatedText);
         text.setText("");
     }
 
     private void stopRecognition()
     {
-        started = false;
-    }
-
-    @Override
-    public void onDestroyView()
-    {
-        super.onDestroyView();
-        isReloading = true;
-        binding = null;
-    }
-
-    @Override
-    public void onResume()
-    {
-        super.onResume();
-        if (isReloading)
-        {
-            isReloading = false;
-            return;
-        }
-
-        getParentFragmentManager().beginTransaction().detach(this).commit();
-        getParentFragmentManager().beginTransaction().attach(this).commit();
-        isReloading = true;
+        // TODO: This should stop searching for hands
     }
 }

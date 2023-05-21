@@ -12,14 +12,14 @@ import org.tensorflow.lite.task.vision.classifier.ImageClassifier;
 import java.io.IOException;
 import java.util.List;
 
-public class Model
+public class HandDetection
 {
-    private final String TAG = "MODEL";
-    private String modelName;
+    private final String TAG = "model.HandDetection";
+    private final String modelName;
 
     private ImageClassifier model;
 
-    public Model(String modelName)
+    public HandDetection(String modelName)
     {
         this.modelName = modelName;
     }
