@@ -48,7 +48,6 @@ public class ReadFragment extends Fragment implements CameraBridgeViewBase.CvCam
     private boolean started = false;
 
     private Mat mRgba;
-    private Mat mGray;
 
     private CameraBridgeViewBase cameraBridgeViewBase;
     private BaseLoaderCallback loaderCallback;
@@ -85,9 +84,9 @@ public class ReadFragment extends Fragment implements CameraBridgeViewBase.CvCam
             }
         };
 
-        handDetection = new HandDetection("hand_detection.tflite");
+        handDetection = new HandDetection("model.tflite", 300);
 
-        if (handDetection.tryLoadModel(requireContext()))
+        if (handDetection.tryLoadModel(requireContext().getAssets()))
         {
             modelReady = true;
         }
@@ -188,7 +187,6 @@ public class ReadFragment extends Fragment implements CameraBridgeViewBase.CvCam
     {
         Log.i(TAG, "cameraView was started");
         mRgba = new Mat(height, width, CvType.CV_8UC4);
-        mGray = new Mat(height, width, CvType.CV_8UC1);
     }
 
     @Override
@@ -201,7 +199,11 @@ public class ReadFragment extends Fragment implements CameraBridgeViewBase.CvCam
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame)
     {
         mRgba = inputFrame.rgba();
-        mGray = inputFrame.gray();
+
+        if (modelReady && started)
+        {
+            mRgba = handDetection.getHand(mRgba);
+        }
 
         return mRgba;
     }
@@ -269,6 +271,7 @@ public class ReadFragment extends Fragment implements CameraBridgeViewBase.CvCam
     private void startRecognition()
     {
         output.setText("");
+        started = true;
         // TODO: do something here to start grabing hands
     }
 
@@ -280,6 +283,7 @@ public class ReadFragment extends Fragment implements CameraBridgeViewBase.CvCam
 
     private void stopRecognition()
     {
+        started = false;
         // TODO: This should stop searching for hands
     }
 }
