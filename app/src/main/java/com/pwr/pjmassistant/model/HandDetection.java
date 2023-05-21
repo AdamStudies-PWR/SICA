@@ -150,6 +150,8 @@ public class HandDetection
                         new Scalar(0, 0, 255, 255), 3);
                 Imgproc.putText(rotatedImage, labelList.get((int) prediction), new Point(left, top),
                         3, 2, new Scalar(255, 0, 0, 255), 2);
+
+                break;
             }
         }
 
