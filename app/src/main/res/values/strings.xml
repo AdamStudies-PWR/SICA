@@ -22,15 +22,20 @@
 
     <!-- Settings screen text-->
     <string name="settingsLabel">Settings</string>
-    <string name="cameraSectionLabel">Camera</string>
-    <string name="cameraTypeLabel">Using:</string>
+    <string name="modelSectionLabel">Model</string>
+    <string name="modelLabel">Using:</string>
     <string name="translationSectionLabel">Translation</string>
-    <string name="imageIntervalLabel">Interval</string>
-    <string name="imageIntervalDefault">500</string>
+    <string name="appearanceThresholdLabel">Letter threshold</string>
+    <string name="appearanceDefault">10</string>
 
     <!-- User messages-->
     <string name="cameraPermissionError">Failed to get camera permission, try granting it manually from settings</string>
     <string name="cameraException">Error connecting to camera</string>
     <string name="model_failed">Failed to load model</string>
+
+    <string-array name="availableModels">
+        <item>American</item>
+        <item>Polish</item>
+    </string-array>
 
 </resources>

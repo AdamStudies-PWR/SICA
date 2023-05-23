@@ -49,7 +49,7 @@ public class HandDetection
     {
         Interpreter.Options options = new Interpreter.Options();
         gpuDelegate = new GpuDelegate();
-        // options.addDelegate(gpuDelegate);
+        options.addDelegate(gpuDelegate);
         options.setNumThreads(6);
 
         try
@@ -80,7 +80,9 @@ public class HandDetection
         Log.d(TAG, "getHand");
 
         Mat rotatedImage = new Mat();
-        Core.flip(inputImage.t(), rotatedImage, 1);
+        Mat temp = inputImage.t();
+        Core.flip(temp, rotatedImage, 1);
+        temp.release();
 
         Bitmap bitmap = Bitmap.createBitmap(rotatedImage.cols(), rotatedImage.rows(),
                 Bitmap.Config.ARGB_8888);
@@ -106,12 +108,10 @@ public class HandDetection
         interpreter.runForMultipleInputsOutputs(input, output);
 
         Object boxes = output.get(0);
-        Object predictions = output.get(1);
         Object prediction_scores = output.get(2);
 
         for (int i=0; i<10; i++)
         {
-            float prediction = (float) Array.get(Array.get(predictions, 0), i);
             float score = (float) Array.get(Array.get(prediction_scores, 0), i);
 
             if (score > 0.5)

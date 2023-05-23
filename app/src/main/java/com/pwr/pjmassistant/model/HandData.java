@@ -14,7 +14,7 @@ public class HandData
 
     private final boolean handDetected;
 
-    private Mat image;
+    private final Mat image;
 
     public HandData(boolean handDetected, Mat image)
     {

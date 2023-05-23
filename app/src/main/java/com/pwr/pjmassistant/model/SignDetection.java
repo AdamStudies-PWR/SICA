@@ -1,9 +1,11 @@
 package com.pwr.pjmassistant.model;
 
+import android.annotation.SuppressLint;
 import android.content.res.AssetFileDescriptor;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.util.Log;
+import android.widget.EditText;
 
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
@@ -13,7 +15,6 @@ import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 import org.tensorflow.lite.Interpreter;
-import org.tensorflow.lite.gpu.GpuDelegate;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
@@ -24,6 +25,7 @@ import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class SignDetection
 {
@@ -35,23 +37,25 @@ public class SignDetection
     private final int INPUT_SIZE;
 
     private Interpreter interpreter;
-    private GpuDelegate gpuDelegate;
 
     private List<String> labelList;
 
-    public SignDetection(String modelName, String labelName, int inputSize)
+    private final int threshold;
+    private int occurrences = 0;
+    private String previousLetter = "";
+    private boolean placed = false;
+
+    public SignDetection(String modelName, String labelName, int inputSize, int threshold)
     {
         this.modelPath = "sign_models/" + modelName;
         this.labelPath = "sign_models/" + labelName;
         this.INPUT_SIZE = inputSize;
+        this.threshold = threshold;
     }
 
     public boolean tryLoadModel(AssetManager manager)
     {
         Interpreter.Options options = new Interpreter.Options();
-        gpuDelegate = new GpuDelegate();
-        // Not sure if gpu delegate will be needed here
-        // options.addDelegate(gpuDelegate);
         options.setNumThreads(4);
 
         try
@@ -94,7 +98,7 @@ public class SignDetection
         return labels;
     }
 
-    public Mat getSign(HandData data)
+    public Mat getSign(HandData data, EditText outputText)
     {
         Log.d(TAG, "getSign");
 
@@ -112,8 +116,12 @@ public class SignDetection
         if (right > data.getWidth()) right = data.getWidth();
         if (bottom > data.getHeight()) bottom = data.getHeight();
 
+        if (left >= right || top >= bottom) return rotateImage(inputImage);
+
         float width = right - left;
         float height = bottom - top;
+
+        if (width < 1 || height < 1) return rotateImage(inputImage);
 
         Rect hand = new Rect((int) left, (int) top, (int) width, (int) height);
         Mat cropped = new Mat(inputImage, hand).clone();
@@ -129,20 +137,42 @@ public class SignDetection
 
         interpreter.run(bufferedHand, output);
 
-        String message = labelList.get((int) output[0][0]);
+        String letter = labelList.get((int) output[0][0]);
+
+        if (!Objects.equals(letter, previousLetter))
+        {
+            resetCounter(letter);
+        }
+        else occurrences++;
+
+        if (occurrences >= threshold && !placed)
+        {
+            placed = true;
+            String temp = outputText.getText() + letter;
+            outputText.setText(temp);
+        }
 
         Imgproc.rectangle(inputImage, new Point(left, top), new Point(right, bottom),
                 new Scalar(0, 0, 255, 255), 3);
-        Imgproc.putText(inputImage, message, new Point(left, top),
+        Imgproc.putText(inputImage, letter, new Point(left, top),
                 3, 2, new Scalar(255, 0, 0, 255), 2);
 
         return rotateImage(inputImage);
     }
 
+    private void resetCounter(String letter)
+    {
+        previousLetter = letter;
+        occurrences = 0;
+        placed = false;
+    }
+
     private Mat rotateImage(Mat input)
     {
         Mat output = new Mat();
-        Core.flip(input.t(), output, Core.ROTATE_90_CLOCKWISE);
+        Mat temp = input.t();
+        Core.flip(temp, output, Core.ROTATE_90_CLOCKWISE);
+        temp.release();
         return output;
     }
 

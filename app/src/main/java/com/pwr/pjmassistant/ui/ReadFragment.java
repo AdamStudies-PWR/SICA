@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.text.InputType;
@@ -41,7 +42,7 @@ import org.opencv.core.Mat;
 public class ReadFragment extends Fragment implements CameraBridgeViewBase.CvCameraViewListener2
 {
     private final String TAG = "ui.ReadFragment";
-
+    private final String PREFERENCES_KEY = "user-prefs-key";
     private static boolean isReloading = true;
     private FragmentReadBinding binding;
     private EditText output;
@@ -88,7 +89,16 @@ public class ReadFragment extends Fragment implements CameraBridgeViewBase.CvCam
         };
 
         handDetection = new HandDetection("model.tflite", 300);
-        signRecognition = new SignDetection("model_american.tflite", "american_labels.txt", 96);
+
+        SharedPreferences settings = requireContext().getSharedPreferences(PREFERENCES_KEY, 0);
+        String modelName = "model_polish.tflite";
+        String labelPath = "polish_labels.txt";
+        if (settings.getString("model", "0").equals("0"))
+        {
+            modelName = "model_american.tflite";
+            labelPath = "american_labels.txt";
+        }
+        signRecognition = new SignDetection(modelName, labelPath, 96, settings.getInt("threshold", 10));
 
         if (handDetection.tryLoadModel(requireContext().getAssets())
                 && signRecognition.tryLoadModel(requireContext().getAssets()))
@@ -119,6 +129,12 @@ public class ReadFragment extends Fragment implements CameraBridgeViewBase.CvCam
             startCamera();
         }
 
+        if (savedInstanceState != null)
+        {
+            started = savedInstanceState.getBoolean("isStarted", false);
+            if (started) startRecognition(binding.useButton);
+        }
+
         binding.clearButton.setOnClickListener(this::clearView);
         binding.useButton.setOnClickListener(this::recognitionController);
 
@@ -128,6 +144,13 @@ public class ReadFragment extends Fragment implements CameraBridgeViewBase.CvCam
             ClipData data = ClipData.newPlainText("translation", output.getText());
             clipboard.setPrimaryClip(data);
         });
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState)
+    {
+        super.onSaveInstanceState(outState);
+        outState.putBoolean("isStarted", started);
     }
 
     @Override
@@ -208,7 +231,7 @@ public class ReadFragment extends Fragment implements CameraBridgeViewBase.CvCam
         if (modelReady && started)
         {
             HandData data = handDetection.getHand(mRgba);
-            mRgba = signRecognition.getSign(data);
+            mRgba = signRecognition.getSign(data, requireView().findViewById(R.id.translatedText));
         }
 
         return mRgba;
@@ -264,21 +287,19 @@ public class ReadFragment extends Fragment implements CameraBridgeViewBase.CvCam
         Button button = requireActivity().findViewById(R.id.useButton);
         if (started)
         {
-            stopRecognition();
-            button.setText(R.string.startText);
+            stopRecognition(button);
         }
         else
         {
-            startRecognition();
-            button.setText(R.string.stopText);
+            startRecognition(button);
         }
     }
 
-    private void startRecognition()
+    private void startRecognition(Button button)
     {
+        button.setText(R.string.stopText);
         output.setText("");
         started = true;
-        // TODO: do something here to start grabing hands
     }
 
     private void clearView(View view)
@@ -287,9 +308,9 @@ public class ReadFragment extends Fragment implements CameraBridgeViewBase.CvCam
         text.setText("");
     }
 
-    private void stopRecognition()
+    private void stopRecognition(Button button)
     {
+        button.setText(R.string.startText);
         started = false;
-        // TODO: This should stop searching for hands
     }
 }

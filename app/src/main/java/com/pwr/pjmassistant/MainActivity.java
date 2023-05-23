@@ -71,10 +71,9 @@ public class MainActivity extends AppCompatActivity
 
         if (id == R.id.action_settings)
         {
-            Toast.makeText(getApplicationContext(), "Settings are currently dissabled", Toast.LENGTH_SHORT).show();
-            // Intent intent = new Intent(this, SettingsActivity.class);
-            // startActivity(intent);
-            // return true;
+            Intent intent = new Intent(this, SettingsActivity.class);
+            startActivity(intent);
+            return true;
         }
 
         return super.onOptionsItemSelected(item);

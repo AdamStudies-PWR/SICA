@@ -9,6 +9,7 @@
     <uses-feature android:name="android.hardware.camera.front" />
     <uses-feature android:name="android.hardware.camera.front.autofocus" />
 
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -19,6 +20,18 @@
         android:theme="@style/Theme.PJMAssistant"
         tools:targetApi="31">
 
+        <uses-native-library
+            android:name="libOpenCL.so"
+            android:required="false" />
+
+        <uses-native-library
+            android:name="libOpenCL-car.so"
+            android:required="false" />
+
+        <uses-native-library
+            android:name="libOpenCL-pixel.so"
+            android:required="false" />
+
         <activity
             android:name=".settings.SettingsActivity"
             android:exported="false" />
@@ -26,6 +39,7 @@
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
+            android:configChanges="orientation"
             android:theme="@style/Theme.PJMAssistant.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
