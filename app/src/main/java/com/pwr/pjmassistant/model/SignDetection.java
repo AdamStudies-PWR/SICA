@@ -1,6 +1,5 @@
 package com.pwr.pjmassistant.model;
 
-import android.annotation.SuppressLint;
 import android.content.res.AssetFileDescriptor;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
