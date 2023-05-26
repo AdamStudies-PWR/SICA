@@ -16,7 +16,7 @@ import java.util.ArrayList;
 public class SettingsActivity extends AppCompatActivity
 {
     private final String TAG = "settings.SettingsActivity";
-    private final String PREFERENCES_KEY = "user-prefs-key";
+        private final String PREFERENCES_KEY = "user-prefs-key";
     private ArrayList<String> cameraList;
     private SharedPreferences settings;
 

@@ -22,6 +22,10 @@ import com.pwr.pjmassistant.databinding.FragmentSpeakBinding;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
 public class SpeakFragment extends Fragment
@@ -29,6 +33,13 @@ public class SpeakFragment extends Fragment
     private final String PREFERENCES_KEY = "user-prefs-key";
     private static boolean isReloading = true;
     private FragmentSpeakBinding binding;
+
+    private List<String> allowedAmerican = Arrays.asList("A", "B", "C", "D", "E", "F", "G", "H",
+            "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"
+    );
+    private List<String> allowedPolish = Arrays.asList("A", "Ą", "B", "C", "CH", "Ć", "CZ", "D",
+            "E", "Ę", "F", "G", "H", "I", "J", "K", "L", "Ł", "M", "N", "Ń", "O", "Ó", "P",
+            "R", "RZ", "S", "Ś", "SZ", "T", "U", "W", "Y", "Z", "Ź", "Ż");
 
     private ImageView imageView;
     @Override
@@ -51,15 +62,13 @@ public class SpeakFragment extends Fragment
         Bitmap bitImage = BitmapFactory.decodeResource(this.getResources(), useAmerican ? R.raw.american : R.raw.polish);
         imageView.setImageBitmap(bitImage);
 
+        EditText source = requireView().findViewById(R.id.inputText);
         binding.translateButton.setOnClickListener(translateButton -> {
-            EditText source = requireView().findViewById(R.id.inputText);
             source.setText("");
         });
 
-        EditText text = requireView().findViewById(R.id.)
-
         binding.translateButton.setOnClickListener(translateButton -> {
-
+            parseText(String.valueOf(source.getText()));
         });
     }
 
@@ -84,5 +93,15 @@ public class SpeakFragment extends Fragment
         getParentFragmentManager().beginTransaction().detach(this).commit();
         getParentFragmentManager().beginTransaction().attach(this).commit();
         isReloading = true;
+    }
+
+    public void parseText(String input)
+    {
+        if (input.isEmpty() || input.equals(""))
+        {
+            return;
+        }
+
+
     }
 }
