@@ -19,6 +19,8 @@
 
     <!-- Speak screen text-->
     <string name="speakLabel">Speak</string>
+    <string name="nextButton">Next</string>
+    <string name="previousButton">Previous</string>
 
     <!-- Settings screen text-->
     <string name="settingsLabel">Settings</string>
@@ -32,6 +34,7 @@
     <string name="cameraPermissionError">Failed to get camera permission, try granting it manually from settings</string>
     <string name="cameraException">Error connecting to camera</string>
     <string name="model_failed">Failed to load model</string>
+    <string name="sign_not_supported">Invalid input! Only letters are supported.</string>
 
     <string-array name="availableModels">
         <item>American</item>
